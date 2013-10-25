@@ -111,24 +111,18 @@ if(!class_exists('AC_Inspector')) {
 
 			foreach($folders2check as $folder) {
 				$file_created = $this->ac_createFile(ABSPATH.$folder.'/ac_testfile.txt') ? true : false;
-				$dir_created = $this->ac_createDir(ABSPATH.$folder.'/ac_testdir') ? true : false;
 				
 				if(defined('DISALLOW_FILE_MODS') && true == DISALLOW_FILE_MODS){	
-					if($file_created){
+					if($file_created) {
 						$this->ac_log('Was able to create file `' . $folder . '/ac_testfile.txt` despite constant DISALLOW_FILE_MODS is set to true, check permissions?', 'warning');
 					}
-					if($dir_created){
-						$this->ac_log('Was able to create directory `' . $folder . '/ac_testdir` despite constant DISALLOW_FILE_MODS is set to true, check permissions?', 'warning');	
-					}
-				} else{
+				} else {
 					if(!$file_created){
 						$this->ac_log('Was not able to create file `' . $folder . '/ac_testfile.txt`. Check permissions.', 'fatal');
 					}
-					if(!$dir_created){
-						$this->ac_log('Was not able to create directory `' . $folder . '/ac_testdir`. Check permissions.', 'fatal');
-					}
 				}
 			}
+			els
 
 		}
 		public function ac_createFile($path, $output = true){
