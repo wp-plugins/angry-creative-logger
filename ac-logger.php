@@ -13,10 +13,17 @@ if(!class_exists('AC_Inspector')) {
 
 		public $log_path;
 		public $errors = array();
+		public $log_levels = array();
 
 		public function __construct() { 
 
 			$this->checkPath();
+
+			$this->log_levels = array(
+				'notice',
+				'warning',
+				'fatal'
+			);
 			// Log functions
 			add_action( 'activate_plugin', 		array( $this, 'plugin_changed'), 'activated' );
 			add_action( 'deactivate_plugin',	array( $this, 'plugin_changed'), 'deactivated' );
@@ -92,33 +99,63 @@ if(!class_exists('AC_Inspector')) {
 		}
 
 		public function ac_checkPermissions(){
-			
-			if(defined('DISALLOW_FILE_MODS')){	
-				if($this->ac_createFile(dirname(__FILE__).'/ac_testfile.txt')){
-					$this->ac_log('Was able to create file despite constant DISALLOW_FILE_MODS is set to true, check permissions?');
-				}
-				if(!defined('DISALLOW_FILE_EDIT') || DISALLOW_FILE_EDIT == false){
-					$this->ac_log('Is this a production server? Consider adding define("DISALLOW_FILE_EDIT", true) to wp-config.php.');
-				}
-			} else{
-				if(!$this->ac_createFile(dirname(__FILE__).'/ac_testfile.txt')){
-					$this->ac_log('Was not able to create file in the plugins folder. Check permissions.');
-				}
-				if(!$this->ac_createFile(wp_make_link_relative(WP_CONTENT_DIR).'/ac_testfile.txt')){
-					$this->ac_log('Was not able to create file in web root folder. Check permissions.');
+
+			$folders2check = array(
+				'',
+				'wp-admin',
+				'wp-content',
+				'wp-content/plugins',
+				'wp-content/themes',
+				'wp-includes'
+			);
+
+			foreach($folders2check as $folder) {
+				$file_created = $this->ac_createFile(ABSPATH.$folder.'/ac_testfile.txt') ? true : false;
+				$dir_created = $this->ac_createDir(ABSPATH.$folder.'/ac_testdir') ? true : false;
+				
+				if(defined('DISALLOW_FILE_MODS') && true == DISALLOW_FILE_MODS){	
+					if($file_created){
+						$this->ac_log('Was able to create file `' . $folder . '/ac_testfile.txt` despite constant DISALLOW_FILE_MODS is set to true, check permissions?', 'warning');
+					}
+					if($dir_created){
+						$this->ac_log('Was able to create directory `' . $folder . '/ac_testdir` despite constant DISALLOW_FILE_MODS is set to true, check permissions?', 'warning');	
+					}
+				} else{
+					if(!$file_created){
+						$this->ac_log('Was not able to create file `' . $folder . '/ac_testfile.txt`. Check permissions.', 'fatal');
+					}
+					if(!$dir_created){
+						$this->ac_log('Was not able to create directory `' . $folder . '/ac_testdir`. Check permissions.', 'fatal');
+					}
 				}
 			}
+
 		}
-		public function ac_createFile($file, $output = true){
+		public function ac_createFile($path, $output = true){
 			try {
-				$ourFileHandle = @fopen($file, 'w');
+				$ourFileHandle = @fopen($path, 'w');
 			    if (! $ourFileHandle) {
-        			throw new Exception("Could not create file " . $file);
+        			throw new Exception("Could not create file " . $path);
     			} else {
 					fclose($ourFileHandle);
-					unlink($file);
+					unlink($path);
 					return true;
     			}
+			} catch(Exception $e){
+				if($output){
+					$this->ac_log($e->getMessage());
+				}
+				return false;
+			}
+		}		
+		public function ac_createDir($path, $output = true){
+			try {
+				$dir_created = mkdir($path, 0, true);
+				if ($dir_created) {
+    				rmdir($path);
+    				return true;
+				}
+
 			} catch(Exception $e){
 				if($output){
 					$this->ac_log($e->getMessage());
@@ -138,8 +175,7 @@ if(!class_exists('AC_Inspector')) {
 					unlink($ourFileName);
     			}
 			} catch(Exception $e){
-				$this->ac_log($e->getMessage());
-
+				$this->ac_log($e->getMessage(), 'fatal');
 			}
 		}
 		/*
@@ -156,7 +192,7 @@ if(!class_exists('AC_Inspector')) {
 
 			$message = 'Plugin "'.$plugin_data['Name']. '" was ' . $status . $usermsg . $site;
 
-			$this->ac_log($message);
+			$this->ac_log($message, 'warning');
 			$this->ac_checkUploadPermissions();
 
 		}
@@ -171,7 +207,7 @@ if(!class_exists('AC_Inspector')) {
 			$status = (current_filter() == 'activate_blog') ? 'activated' : 'deactivated';
 			$message = 'Site ' . get_blog_details($site)->blogname . ' (id: '.$site . ')' . ' was ' . $status . $usermsg . '\n';
 
-			$this->ac_log($message);
+			$this->ac_log($message, 'warning');
 		}
 		public function mail_sent($mail){
 			$this->ac_log($mail);
@@ -180,8 +216,12 @@ if(!class_exists('AC_Inspector')) {
 		/* 
 			Main log function that does the actual output
 		*/
-		private function ac_log($message){
-			$output = '['.date("d-M-Y H:i:s").'] ' . gethostname() . ' | ['.get_class($this).'] - ';
+		private function ac_log($message, $status = 'notice'){
+
+			if(!in_array($status, $this->log_levels)){
+				$status = 'notice';
+			}
+			$output = '['.date("d M, Y H:i:s").'] ['.get_class($this).'] [ ' .strtoupper($status). ' ] - ';
 
 			if (is_array($message) || is_object($message)) {
             	error_log($output);
