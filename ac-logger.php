@@ -3,7 +3,7 @@
 Plugin Name: Angry Creative Inspector
 Plugin URI: http://angrycreative.se
 Description: Logs different events.
-Version: 0.1
+Version: 0.1.1
 Author: Angry Creative AB
 */
 
