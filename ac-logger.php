@@ -122,8 +122,6 @@ if(!class_exists('AC_Inspector')) {
 					}
 				}
 			}
-			els
-
 		}
 		public function ac_createFile($path, $output = true){
 			try {
