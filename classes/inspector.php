@@ -1,7 +1,7 @@
 <?php 
 /*
 Class name: AC Inspector
-Version: 0.4.2
+Version: 0.5.0
 Author: Sammy Nordström, Angry Creative AB
 */
 
@@ -234,7 +234,7 @@ if(!class_exists('AC_Inspector')) {
 		/* 
 			Main log function that does the actual output
 		*/
-		public static function log($message, $routine = '') {
+		public static function log($message, $routine = '', $site_id = '') {
 
 			$log_level = '';
 
@@ -242,8 +242,18 @@ if(!class_exists('AC_Inspector')) {
 
 				$routine_options = ACI_Routine_Handler::get_options($routine);
 
-				if (is_array($routine_options) && isset($routine_options['log_level'])) {
-					$log_level = $routine_options['log_level'];
+				if (is_array($routine_options)) {
+					if ( $routine_options['site_specific_settings'] && is_multisite() && is_plugin_active_for_network( ACI_PLUGIN_BASENAME ) ) {
+						$site_id = ( is_numeric($site_id) ) ? $site_id : get_current_blog_id();
+						if ( is_array($routine_options[$site_id]) && isset($routine_options[$site_id]['log_level']) ) {
+							$log_level = $routine_options[$site_id]['log_level'];
+						} else if ( is_array($routine_options[1]) && isset($routine_options[1]['log_level']) ) {
+							$log_level = $routine_options[1]['log_level'];
+						}
+					}
+					if ( empty($log_level) && isset($routine_options['log_level']) ) {
+						$log_level = $routine_options['log_level'];
+					}
 				}
 
 			}
@@ -259,8 +269,8 @@ if(!class_exists('AC_Inspector')) {
 
 				if (is_array($message) || is_object($message)) {
 
-	            	error_log( $output );
-					error_log( print_r( $message, true ) . "\n", 3, self::$log_path); 
+	            	error_log( $output, 3, self::$log_path );
+					error_log( print_r( $message, true ) . "\n", 3, self::$log_path ); 
 
 	        	} else {
 
