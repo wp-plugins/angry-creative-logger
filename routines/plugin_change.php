@@ -3,23 +3,52 @@
 /*
  *	Logs if a plugin has been activated/deactivated
  */
-function aci_log_plugin_change($plugin){
 
-	$user = wp_get_current_user();
-	$site = (is_multisite()) ? ' on "' . get_blog_details(get_current_blog_id())->blogname . '"' : '';
-	$usermsg = ($user instanceof WP_User) ? ' (user: '.$user->user_login.')' : '';
-	$status = (current_filter() == 'activate_plugin') ? 'activated' : 'deactivated';
+class ACI_Routine_Log_Plugin_Change {
 
-	$plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' .$plugin);
+	const LOG_LEVEL = "warning";
 
-	$message = 'Plugin "'.$plugin_data['Name']. '" was ' . $status . $usermsg . $site;
+	const DESCRIPTION = "Logs if a plugin has been activated or deactivated.";
 
-	AC_Inspector::log($message, __FUNCTION__);
+	public static function register() {
 
-	return "";
+		$default_options = array( 'log_level' => self::LOG_LEVEL, 
+								  'description' => self::DESCRIPTION,
+								  'site_specific_settings' => 0 );
+		
+		aci_register_routine( __CLASS__, $default_options, "activate_plugin", 10, 1 );
+		aci_register_routine( __CLASS__, $default_options, "deactivate_plugin", 10, 1 );
+
+	}
+
+	public static function inspect( $plugin ) {
+
+		$user = wp_get_current_user();
+		$site = (is_multisite()) ? ' on "' . get_blog_details(get_current_blog_id())->blogname . '"' : '';
+		$usermsg = ($user instanceof WP_User) ? ' (user: '.$user->user_login.')' : '';
+
+		switch( current_filter() ) {
+			case 'activate_plugin':
+				$status = 'activated';
+				break;
+			case 'deactivate_plugin':
+				$status = 'deactivated';
+				break;
+		}
+
+		if ( !empty($status) ) {
+			
+			$plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' .$plugin);
+			$message = 'Plugin "'.$plugin_data['Name']. '" was ' . $status . $usermsg . $site;
+
+			AC_Inspector::log( $message, __CLASS__ );
+
+		}
+
+		return "";
+
+	}
 
 }
 
-$options = array('log_level' => 'warning');
-aci_register_routine("aci_log_plugin_change", $options, "activate_plugin");
-aci_register_routine("aci_log_plugin_change", $options, "deactivate_plugin");
+ACI_Routine_Log_Plugin_Change::register();
