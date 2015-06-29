@@ -2,8 +2,8 @@
 
 /*
 Class name: Angry Inspector Command
-Version: 0.1
-Depends: AC Inspector 0.6
+Version: 0.2
+Depends: AC Inspector 0.7, ACI Routine Handler 0.4
 Author: Sammy Nordström, Angry Creative AB
 */
 
@@ -19,7 +19,7 @@ class Angry_Inspector_Command extends WP_CLI_Command {
      *
      * ## EXAMPLES
      *
-     *     wp angry-inspector inspect write-permissions
+     *     wp angry-inspector inspect file-permissions
      *
      * @synopsis [--force] [<routine>] [<other-routine>]
      */
@@ -92,9 +92,45 @@ class Angry_Inspector_Command extends WP_CLI_Command {
 					break;
 				}
 
+		if ( AC_Inspector::$error_count ) {
+                    AC_Inspector::$error_count = 0;
+                    continue;
+                }
+
                 $routine_log_count = AC_Inspector::$log_count - $total_log_count;
 
-        		WP_CLI::success( "Inspected $routine with $routine_log_count remark(s).\n" );
+        	WP_CLI::success( "Inspected $routine with $routine_log_count remark(s).\n" );
+
+                if ( $routine_log_count > 0 ) {
+
+                    $repair_method = ACI_Routine_Handler::get_repair_method( $all_routines[$routine_key], $routine_options );
+                    if ( !empty( $repair_method ) ) {
+
+                        WP_CLI::confirm( "Routine $routine has a repair method that may or may not fix the problem for you.\n" .
+                                         "Have you made a backup of your website's entire source code, uploaded files and database\n" . 
+                                         "and want me to try and run the repair method with the risk of me messing everything up?" );
+
+                        $total_log_count = AC_Inspector::$log_count;
+                        $total_error_count = AC_Inspector::$error_count;
+                        $total_success_count = AC_Inspector::$success_count;
+
+                        call_user_func( $repair_method );
+
+                        $routine_log_count = AC_Inspector::$log_count - $total_log_count;
+                        $routine_error_count = AC_Inspector::$error_count - $total_error_count;
+                        $routine_success_count = AC_Inspector::$success_count - $total_success_count;
+
+                        if ( $routine_error_count > 0 ) {
+                            WP_CLI::error( "Repair method for routine '$routine' yielded $routine_error_count error(s).\n" );
+                        } else if ( $routine_success_count > 0 || $routine_log_count > 0 ) {
+                            WP_CLI::success( "Successfully performed repair method for routine '$routine' with no errors.\n" );
+                        } else {
+                            WP_CLI::success( "Nothing seems broken. If it ain't broke, don't fix it.\n" );
+                        }
+
+                    }
+
+                }
 
         	} else {
 
@@ -116,7 +152,7 @@ class Angry_Inspector_Command extends WP_CLI_Command {
      *
      * ## EXAMPLES
      *
-     *     wp angry-inspector repair write-permissions
+     *     wp angry-inspector repair file-permissions
      *
      * @synopsis [--force] [<routine>] [<other-routine>]
      */
@@ -216,3 +252,4 @@ class Angry_Inspector_Command extends WP_CLI_Command {
 }
 
 WP_CLI::add_command( 'angry-inspector', 'Angry_Inspector_Command' );
+
