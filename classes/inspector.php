@@ -1,7 +1,7 @@
 <?php 
 /*
 Class name: AC Inspector
-Version: 0.6
+Version: 0.7
 Author: Sammy Nordström, Angry Creative AB
 */
 
@@ -321,6 +321,14 @@ if(!class_exists('AC_Inspector')) {
 				if (empty($log_level) || !in_array($log_level, self::$_log_levels)) {
 					$log_level = "notice";
 				}
+
+				if ( $args['success'] ) {
+	        		$log_level = "success";
+	        	}
+
+	        	if ( $args['error'] ) {
+	        		$log_level = "error";
+	        	}
 
 				$output = '['.date("d M, Y H:i:s").'] ['.__CLASS__.'] [ ' .strtoupper($log_level). ' ] - ';
 
