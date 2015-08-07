@@ -1,17 +1,19 @@
 === Angry Creative Inspector ===
 Contributors: ac-robin, samface, angrycreative
-Tags: inspect, inspection, monitor, monitoring, log, logging, check, checking, validate, validation, permissions, install, installation
+Tags: inspect, inspection, monitor, monitoring, log, logging, check, checking, validate, validation, permissions, install, installation, wp-cli
 Requires at least: 4.0
-Tested up to: 4.2.2
-Stable tag: 0.7
+Tested up to: 4.2.4
+Stable tag: 0.8.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Inspects and logs possible issues with your Wordpress installation.
+Inspects, logs and with the aid of WP-CLI it may even repair possible issues with your Wordpress installation.
 
 == Description ==
 
-Inspects and logs possible issues with your Wordpress installation.
+Inspects, logs and with the aid of WP-CLI it may even repair possible issues with your Wordpress installation.
+
+TO-DO: Documentation :)
 
 == Installation ==
 
@@ -20,6 +22,16 @@ Inspects and logs possible issues with your Wordpress installation.
 3. Make sure the right log file path is set under the 'Settings/AC Inspector' menu in Wordpress
 
 == Changelog ==
+
+= 0.8.x =
+* WP CLI interactivity for running possible repair method when inspection yields errors
+* Completely rewritten and much improved file permissions inspection routine
+* Added the abilitiy to define HTTPD_USER (http daemon user name) in wp-config.php
+* Added the abilitiy to define FS_USER (file owner user name) in wp-config.php
+* Added repair method to file permissions routine using HTTPD_USER and FS_USER for setting ownerships
+* Added the abilitiy to define SITE_RELEASE_TIER (local/development/test/integration/stage/production) in wp-config.php
+* Added repair method to site visibility routine using SITE_RELEASE_TIER for making the site public or private
+* Added the abiltity to define HIDDEN_SITES to prevent specific sites from being made public by the site visibility repair method
 
 = 0.7.x =
 * Added repair method support for inspection routines
